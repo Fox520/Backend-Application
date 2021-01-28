@@ -1,20 +1,21 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
-WORKDIR /src
-COPY ["Innoloft/Innoloft.csproj", "Innoloft/"]
-RUN dotnet restore "Innoloft/Innoloft.csproj"
-COPY . .
-WORKDIR "/src/Innoloft"
-RUN dotnet build "Innoloft.csproj" -c Release -o /app/build
+EXPOSE 44305
+EXPOSE 53044
+EXPOSE 5001
+EXPOSE 5000
 
-FROM build AS publish
-RUN dotnet publish "Innoloft.csproj" -c Release -o /app/publish
+# Copy csproj and restore as distinct layers
+COPY *.csproj ./
+RUN dotnet restore
 
-FROM base AS final
+# Copy everything else and build
+COPY . ./
+RUN dotnet publish --framework netcoreapp3.1 --configuration Release --output out
+
+# Build runtime image
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "Innoloft.dll"]

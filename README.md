@@ -1,5 +1,13 @@
 # Backend-Application
 > Roughly 4-5 hours taken
+## Running with Docker
+> Run the following within this directory [Innoloft/Innoloft](Innoloft/Innoloft)
+```
+docker build . -t myimage
+docker run -d -p 80:80 myimage:latest
+```
+### Note
+* Have Redis running on the host machine on port 6379 for caching
 ## Instructions
 Please stick to the following instructions on how to submit your application:
 1. Read the whole README

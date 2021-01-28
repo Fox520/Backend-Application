@@ -16,7 +16,8 @@ namespace Innoloft.Controllers
     {
         private readonly ProductContext _db;
         private readonly IMapper _mapper;
-        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
+        // Connect to Redis on host machine
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("host.docker.internal");
 
         public ProductController(ProductContext context, IMapper mapper)
         {
