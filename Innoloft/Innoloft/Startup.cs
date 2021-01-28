@@ -45,6 +45,8 @@ namespace Innoloft
             services.AddSingleton(mapper);
 
             services.AddControllers();
+
+            services.AddSwaggerGen();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -58,6 +60,14 @@ namespace Innoloft
                 options => options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
             );
             app.UseHttpsRedirection();
+
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Innoloft API V1");
+            });
 
             app.UseRouting();
 

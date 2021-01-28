@@ -43,12 +43,12 @@ Develop a minified version of the products module api. The API should provide en
 
 ## Bonus
 The following points are optional but give additional credit:
-* Avoid [anemic domain model](https://www.martinfowler.com/bliki/AnemicDomainModel.html) ✅
+* Avoid [anemic domain model](https://www.martinfowler.com/bliki/AnemicDomainModel.html)
 * Caching
     * redis (or memcached)
 * Test Coverage
 * Swagger
-* Get all products request should include the user object ✅
+* Get all products request should include the user object
 * basic JWT Authentication
     * enalbe only the owner of the product to edit / delete the product
 * Setup CORS to allow working with deployed service from localhost 
