@@ -30,7 +30,7 @@ Develop a minified version of the products module api. The API should provide en
     * Use SQLite or MySQL (**Do not use Microsoft SQL or SQL Express**)
         - When using MySQL, please add setup instructions
     * Use EF Core ORM framework to work with database
-* Tests project
+* Tests project ✅
     * At least one unit test should be written (even the simplest one).
     * Prefer [xUnit](https://xunit.net/)
 * Controller should contain POST,DELETE,UPDATE and two GET methods ✅
