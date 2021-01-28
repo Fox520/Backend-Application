@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Innoloft.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,17 +16,41 @@ namespace Innoloft.Controllers
     {
         private readonly ProductContext _db;
         private readonly IMapper _mapper;
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
 
         public ProductController(ProductContext context, IMapper mapper)
         {
             _db = context;
             _mapper = mapper;
+
         }
 
         [HttpGet]
         public async Task<ActionResult<List<ProductDTO>>> GetAllProducts(string productType, int page = 1, int size = 10)
         {
+            IDatabase cache = redis.GetDatabase();
             List<Product> result;
+            // Serves as identifier for current query in Redis
+            string tempKey = productType + page + size;
+            // Check if id is in store
+            string cachedObj = cache.StringGet(tempKey.ToString());
+            if (cachedObj != null)
+            {
+                string cacheInvalidated = cache.StringGet("cacheInvalidated");
+                if (cacheInvalidated == null)
+                {
+                    Console.WriteLine("cache hit");
+                    return Newtonsoft.Json.JsonConvert.DeserializeObject<List<ProductDTO>>(cachedObj);
+                }
+                else
+                {
+                    // Delete key since cache is invalidated
+                    cache.KeyDelete(tempKey);
+                    cache.KeyDelete("cacheInvalidated");
+                }
+
+            }
+
             if (productType != null)
             {
                 // Filter products retrieved by category and paginate
@@ -53,13 +77,22 @@ namespace Innoloft.Controllers
                 productDTO.User = await UserDTO.fetchUserAsync(productDTO.UserId);
                 responseList.Add(productDTO);
             }
+            // Add to cache
+            cache.StringSet(tempKey, Newtonsoft.Json.JsonConvert.SerializeObject(responseList, Newtonsoft.Json.Formatting.Indented));
             return responseList;
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDTO>> GetProduct(int id)
         {
-
+            IDatabase cache = redis.GetDatabase();
+            // Check if id is in store
+            string cachedObj = cache.StringGet(id.ToString());
+            if (cachedObj != null)
+            {
+                Console.WriteLine("cache hit");
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<ProductDTO>(cachedObj);
+            }
             var result = await _db.Products.FindAsync(id);
             if (result == null)
             {
@@ -69,6 +102,8 @@ namespace Innoloft.Controllers
             // TODO: include the address if they own the product
             var productDTO = _mapper.Map<ProductDTO>(result);
             productDTO.User = await UserDTO.fetchUserAsync(productDTO.UserId);
+            // Add product to cache
+            cache.StringSet(id.ToString(), Newtonsoft.Json.JsonConvert.SerializeObject(productDTO, Newtonsoft.Json.Formatting.Indented));
             return productDTO;
         }
 
@@ -82,6 +117,12 @@ namespace Innoloft.Controllers
             }
             _db.Products.Add(prd);
             await _db.SaveChangesAsync();
+            IDatabase cache = redis.GetDatabase();
+            // Add product view to cache
+            var productDTO = _mapper.Map<ProductDTO>(prd);
+            productDTO.User = await UserDTO.fetchUserAsync(productDTO.UserId);
+            cache.StringSet(prd.Id.ToString(), Newtonsoft.Json.JsonConvert.SerializeObject(productDTO, Newtonsoft.Json.Formatting.Indented));
+            cache.StringSet("cacheInvalidated", "true");
 
             return CreatedAtAction(nameof(GetProduct), new { id = prd.Id }, prd);
         }
@@ -121,6 +162,10 @@ namespace Innoloft.Controllers
             try
             {
                 await _db.SaveChangesAsync();
+                // Delete product from cache and invalidate cache
+                IDatabase cache = redis.GetDatabase();
+                cache.KeyDelete(id.ToString());
+                cache.StringSet("cacheInvalidated", "true");
                 return NoContent();
 
             }
@@ -144,6 +189,10 @@ namespace Innoloft.Controllers
             }
             _db.Remove(result);
             await _db.SaveChangesAsync();
+            // Delete product from cache and invalidate cache
+            IDatabase cache = redis.GetDatabase();
+            cache.KeyDelete(id.ToString());
+            cache.StringSet("cacheInvalidated", "true");
 
             return StatusCode(204);
         }
