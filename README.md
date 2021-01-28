@@ -1,4 +1,5 @@
 # Backend-Application
+> Roughly 4-5 hours taken
 ## Instructions
 Please stick to the following instructions on how to submit your application:
 1. Read the whole README
