@@ -32,6 +32,7 @@ namespace Innoloft
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
             // Inject db service
             services.AddEntityFrameworkSqlite().AddDbContext<ProductContext>();
             // Auto Mapper Configurations
@@ -53,7 +54,9 @@ namespace Innoloft
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UseCors(
+                options => options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()
+            );
             app.UseHttpsRedirection();
 
             app.UseRouting();

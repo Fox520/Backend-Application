@@ -24,9 +24,24 @@ namespace Innoloft.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ProductDTO>>> GetAllProducts()
+        public async Task<ActionResult<List<ProductDTO>>> GetAllProducts(string productType, int page = 1, int size = 10)
         {
-            List<Product> result = await _db.Products.ToListAsync();
+            List<Product> result;
+            if (productType != null)
+            {
+                // Filter products retrieved by category and paginate
+                result = await _db.Products.Where(p => p.Category.ToLower() == productType.ToLower())
+                        .Skip((page - 1) * size).Take(size)
+                        .ToListAsync();
+            }
+            else
+            {
+                result = await _db.Products
+                        // Paginate
+                        .Skip((page - 1) * size).Take(size)
+                        .ToListAsync();
+            }
+
             if (result == null)
             {
                 return NotFound();
